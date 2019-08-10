@@ -29,6 +29,9 @@ const actions = {
   },
   logout ({commit}) {
     commit('logout')
+  },
+  delFactory ({commit}, factoryId) {
+    commit('delFac', factoryId)
   }
 }
 
@@ -44,6 +47,10 @@ const mutations = {
   },
   modifyList (state, factoryList) {
     state.FactoryList = factoryList
+  },
+  delFac (state, factoryId) {
+    let fs = state.FactoryList
+    state.FactoryList = fs.filter(f => f.id !== factoryId)
   }
 }
 

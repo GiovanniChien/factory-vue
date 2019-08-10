@@ -1,5 +1,21 @@
 <template>
   <div>
+    <el-row style="margin-top:50px">
+      <el-col :offset="3" :span="6">
+        <el-input
+          placeholder="工厂名"
+          prefix-icon="el-icon-search"
+          v-model="factory_name_search"
+          @keyup.enter.native="searchWithName">
+        </el-input>
+      </el-col>
+      <el-col :offset="1" :span="3">
+        <el-button plain @click="searchWithName">搜索</el-button>
+      </el-col>
+      <el-col :offset="7" :span="2">
+        <el-button type="primary" plain @click="addFactory">添加</el-button>
+      </el-col>
+    </el-row>
     <el-row style="margin-top: 30px">
       <el-col :offset="3" :span="19">
         <el-table
@@ -43,21 +59,15 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="flag"
-            label="是否有效"
-            width="80"
-            show-overflow-tooltip>
-            <template slot-scope="scope">
-              <el-tag :type="scope.row.flag===0?'success':'danger'">
-                {{scope.row.flag===0?'有效':'无效'}}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column
             fixed="right"
             label="操作"
-            width="300">
+            width="380">
             <template slot-scope="scope">
+              <el-button
+                @click="viewFactory(scope.$index,scope.row)" type="info"
+                icon="el-icon-view" size="mini">
+                详细
+              </el-button>
               <el-button
                 v-if="scope.row.factoryStatus===0"
                 @click="changeStatus(scope.$index,scope.row,'0')" type="danger"
@@ -70,7 +80,8 @@
                 icon="el-icon-circle-check" size="mini">
                 开启
               </el-button>
-              <el-button @click="handleClick(scope.$index,scope.row)" type="primary" icon="el-icon-edit" size="mini">
+              <el-button @click="handleUpdateClick(scope.$index,scope.row)" type="primary" icon="el-icon-edit"
+                         size="mini">
                 修改
               </el-button>
               <el-button @click="handleDeleteClick(scope.$index,scope.row)" type="danger" icon="el-icon-delete"
@@ -94,14 +105,23 @@
         </el-pagination>
       </el-col>
     </el-row>
+    <AddFactory v-if="addVisible" :visible.sync="addVisible"/>
+    <UpdateFactory v-if="updateVisible" :visible.sync="updateVisible"
+                   :id="id"/>
+    <ViewFactory v-if="showVisible" :visible.sync="showVisible" :id="id"/>
   </div>
 </template>
 
 <script>
   import {mapState} from 'vuex'
-  import {reqFactoryList, reqUpdateStatus} from '../../../api/factory'
+  import PubSub from 'pubsub-js'
+  import {reqFactoryList, reqUpdateStatus, reqDelFac, reqFactoryListByName} from '../../../api/factory'
+  import AddFactory from '../../../components/FactoryManage/AddFactory'
+  import UpdateFactory from '../../../components/FactoryManage/UpdateFactory'
+  import ViewFactory from '../../../components/FactoryManage/ViewFactory'
 
   export default {
+    components: {AddFactory, UpdateFactory, ViewFactory},
     data () {
       return {
         tableData: [],
@@ -112,13 +132,39 @@
           pageSize: 3
         },
         loading: false,
+        addVisible: false,
+        updateVisible: false,
+        showVisible: false,
+        factory_name_search: '',
+        id: '',
       }
     },
     mounted () {
       this.getTableData()
+      PubSub.subscribe('factory-dialog-close', (msg, data) => {
+        this.addVisible = false
+        this.updateVisible = false
+        this.showVisible = false
+        if (data === 1) {
+          //插入成功
+          let {page, totalPage, pageSize, total} = this.pageInfo
+          //当前已经到了最后一页的最后一条记录，即新记录应该插在下一页
+          if (page === totalPage && pageSize * totalPage === total) {
+            this.pageInfo.page = this.pageInfo.page + 1
+            this.pageInfo.total = this.pageInfo.total + 1
+            this.pageInfo.totalPage = this.pageInfo.totalPage + 1
+          } else {
+            this.pageInfo.page = this.pageInfo.totalPage
+          }
+          this.getTableData()
+        } else if (data === 2) {
+          //更新成功，更新当前页
+          this.getTableData()
+        }
+      })
     },
     computed: {
-      ...mapState(['User'])
+      ...mapState(['User', 'FactoryId'])
     },
     methods: {
       async getTableData () {
@@ -131,11 +177,14 @@
         this.pageInfo.totalPage = data.pages
         this.tableData = data.list
         this.loading = false
-        console.log(this.tableData, this.loading)
       },
       handlePageChange (page) {
         this.pageInfo.page = page
-        this.getTableData()
+        if (this.factory_name_search.trim().length !== 0) {
+          this.getTableDataByEs()
+        } else {
+          this.getTableData()
+        }
       },
       changeStatus (index, f, isClose) {
         let msg = ''
@@ -162,6 +211,78 @@
             })
         }).catch(() => {
         })
+      },
+      handleDeleteClick (index, f) {
+        this.$confirm('确认删除此工厂？', '警告', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.loading = true
+          reqDelFac({id: f.id, updateUserid: this.User.id})
+            .then((res) => {
+              if (res.code === '10000') {
+                this.$message({message: '删除成功', type: 'success'})
+                //这一页的最后一条记录,把当前页更新为前一页
+                let {page, totalPage, pageSize, total} = this.pageInfo
+                if (page === totalPage && pageSize * (totalPage - 1) === total - 1) {
+                  this.pageInfo.page = this.pageInfo.page === 1 ? 1 : this.pageInfo.page - 1
+                }
+                //如果不是这一页的最后一条记录，更新当前页
+                this.getTableData()
+                //将vuex中保存的工厂删除
+                this.$store.dispatch('delFactory', f.id)
+                if (this.FactoryId === f.id) {
+                  this.$store.dispatch('setFactoryId', 0)
+                  PubSub.publish('switch-factory')
+                }
+              } else {
+                this.$message({message: res.msg, type: 'error'})
+                this.loading = false
+              }
+            })
+            .catch((error) => {
+              this.$message({message: '网络崩溃了，请稍后再试', type: 'error'})
+              this.loading = false
+            })
+        }).catch(() => {
+
+        })
+      },
+      searchWithName () {
+        //如果搜索框内无内容，则通过mysql分页获取第一页内容
+        if (this.factory_name_search.trim().length === 0) {
+          this.pageInfo.page = 1
+          this.getTableData()
+          return
+        }
+        //如果有内容则去es获取第一页内容
+        this.loading = true
+        this.pageInfo.page = 1
+        this.getTableDataByEs()
+      },
+      async getTableDataByEs () {
+        //先将搜索框内内容用UTF8编码
+        let q = encodeURIComponent(this.factory_name_search)
+        let res = await reqFactoryListByName({page: this.pageInfo.page, q: q, pageSize: this.pageInfo.pageSize})
+        let data = res.data
+        this.tableData = data.content
+        this.pageInfo.page = data.number + 1
+        this.pageInfo.pageSize = data.size
+        this.pageInfo.total = data.totalElements
+        this.pageInfo.totalPage = data.totalPages
+        this.loading = false
+      },
+      addFactory () {
+        this.addVisible = true
+      },
+      handleUpdateClick (index, f) {
+        this.id = f.id.toString()
+        this.updateVisible = true
+      },
+      viewFactory (index, f) {
+        this.id = f.id.toString()
+        this.showVisible = true
       }
     }
   }

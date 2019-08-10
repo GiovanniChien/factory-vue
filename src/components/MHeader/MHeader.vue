@@ -28,6 +28,7 @@
 <script>
   import {mapState} from 'vuex'
   import {reqFactoryById} from '../../api/factory'
+  import PubSub from 'pubsub-js'
 
   export default {
     computed: {
@@ -46,6 +47,9 @@
       } else {
         this.updateFactory()
       }
+      PubSub.subscribe('switch-factory', (msg, data) => {
+        this.switchFactory()
+      })
     },
     methods: {
       logout () {

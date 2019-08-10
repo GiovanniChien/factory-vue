@@ -6,6 +6,11 @@ import router from './router'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import store from './store'
+import * as custom from './filter'
+
+Object.keys(custom).forEach(key => {
+  Vue.filter(key, custom[key])
+})
 
 Vue.config.productionTip = false
 Vue.use(ElementUI)
