@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-    <div class="title">智慧工厂</div>
+    <div class="title" @click="$router.push('/home')">智慧工厂</div>
     <div class="info">
       <span style="font-size: 10px;color:#785e46;cursor: pointer;" @click="logout">退出登录</span>
       <span>{{User.userRealName}}</span>
@@ -102,6 +102,7 @@
     font-weight: bold;
     line-height: 60px;
     padding-left: 80px;
+    cursor: pointer;
   }
 
   .info {

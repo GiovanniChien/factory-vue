@@ -1,7 +1,6 @@
 <template>
   <div>
     <el-menu
-      default-active="2"
       class="el-menu-vertical-demo"
       :unique-opened="true"
       style="min-height: 700px;margin-left: 20px">
@@ -24,7 +23,6 @@
         </template>
         <el-menu-item index="1-1" @click="$router.push('/home/produce_plan')">生产计划管理</el-menu-item>
         <el-menu-item index="1-2" @click="$router.push('/home/produce_schedule')">生产调度管理</el-menu-item>
-        <el-menu-item index="1-3" @click="$router.push('/home/produce_order')">生产订单管理</el-menu-item>
       </el-submenu>
       <el-menu-item index="5" v-show="isAdmin" @click="$router.push('/home/staff')">
         <i class="iconfont icon-yuangong"></i>

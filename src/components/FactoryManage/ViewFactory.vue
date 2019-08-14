@@ -1,6 +1,6 @@
 <template>
-  <el-dialog title="修改" top="20px" :visible.sync="visible"
-             :id="id" width="60%">
+  <el-dialog title="详细" top="20px" :visible.sync="visible"
+             :id="id" width="50%" :before-close="modalClose">
     <el-form ref="form" size="mini"
              :model="form" label-width="80px" style="margin-top: 10px"
              v-loading="loading">

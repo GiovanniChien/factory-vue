@@ -126,7 +126,7 @@
                       type: 'success'
                     })
                     this.$store.dispatch('setFactoryList')
-                    this.modalClose(2)
+                    this.modalClose(1)
                   } else {
                     this.$message({
                       message: '修改失败，请稍后再试',

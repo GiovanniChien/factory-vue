@@ -8,7 +8,6 @@ import FactoryManage from '../Pages/Home/FactoryManage/FactoryManage'
 import ProductionManage from '../Pages/Home/ProductionManage/ProductionManage'
 import EquipmentManage from '../Pages/Home/EquipmentManage/EquipmentManage'
 import OrderManage from '../Pages/Home/OrderManage/OrderManage'
-import ProduceOrder from '../Pages/Home/ProduceManage/ProduceOrder/ProduceOrder'
 import ProducePlan from '../Pages/Home/ProduceManage/ProducePlan/ProducePlan'
 import ProduceSchedule from '../Pages/Home/ProduceManage/ProduceSchedule/ProduceSchedule'
 import Welcome from '../Pages/Home/Welcome/Welcome'
@@ -52,10 +51,6 @@ export default new Router({
         {
           path: 'produce_plan',
           component: ProducePlan
-        },
-        {
-          path: 'produce_order',
-          component: ProduceOrder
         },
         {
           path: 'produce_schedule',
