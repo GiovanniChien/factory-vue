@@ -29,7 +29,6 @@
   import {mapState} from 'vuex'
   import {reqFactoryById} from '../../api/factory'
   import PubSub from 'pubsub-js'
-
   export default {
     computed: {
       ...mapState(['User', 'FactoryId', 'FactoryList'])

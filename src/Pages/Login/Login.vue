@@ -28,6 +28,15 @@
         }
       }
     },
+    created () {
+      // let lett = this;
+      // document.onkeydown = function(e) {
+      //   let key = window.event.keyCode;
+      //   if (key === 13) {
+      //     lett.login();
+      //   }
+      // }
+    },
     methods: {
       async login () {
         if (this.form.userName == null || this.form.userName.length === 0
